@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#101522">
+<title>LeadFinder — поиск компаний</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1020;--panel:#141c2e;--panel2:#1b2740;--line:#2b3852;--text:#eef3ff;--muted:#9eacc4;--accent:#78a6ff;--green:#63d6a0;--yellow:#ffd27a}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 15% 0,#1b2b4a 0,transparent 38%),var(--bg);color:var(--text);font:15px system-ui,-apple-system,Segoe UI,sans-serif}
+main{max-width:1050px;margin:auto;padding:22px 16px 50px}.top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:22px}.brand{font-size:23px;font-weight:800;letter-spacing:-.7px}.brand span{color:var(--accent)}.sub{color:var(--muted);font-size:13px}
+.panel{background:rgba(20,28,46,.96);border:1px solid var(--line);border-radius:18px;padding:18px;margin:14px 0;box-shadow:0 12px 35px #0002}
+h2{font-size:17px;margin:0 0 14px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+label{display:block;color:var(--muted);font-size:12px;margin-bottom:6px}input,select{width:100%;background:#0e1627;color:var(--text);border:1px solid var(--line);border-radius:11px;padding:13px;font:inherit;outline:none}input:focus,select:focus{border-color:var(--accent)}
+.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}button,.btn{border:0;border-radius:11px;padding:12px 16px;background:var(--accent);color:#091326;font-weight:750;font:inherit;cursor:pointer}button.secondary{background:var(--panel2);color:var(--text);border:1px solid var(--line)}button:disabled{opacity:.55;cursor:wait}
+.status{color:var(--muted);font-size:13px;margin-top:12px;line-height:1.5}.stats{display:flex;gap:10px;flex-wrap:wrap}.stat{background:#0e1627;border:1px solid var(--line);padding:12px 15px;border-radius:13px;min-width:120px}.stat b{display:block;font-size:22px}.stat span{font-size:12px;color:var(--muted)}
+.list{display:grid;gap:10px}.company{background:#10192b;border:1px solid var(--line);border-radius:14px;padding:14px}.company-head{display:flex;justify-content:space-between;gap:12px}.company h3{font-size:15px;margin:0 0 5px}.meta{font-size:12px;color:var(--muted);line-height:1.5}.tag{font-size:11px;color:#b9d0ff;background:#21365a;padding:5px 8px;border-radius:20px;white-space:nowrap;height:max-content}.reason{font-size:13px;color:var(--yellow);margin-top:9px}.company-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.company-actions button{padding:8px 11px;font-size:12px}
+.empty{padding:28px 10px;text-align:center;color:var(--muted)}.note{font-size:12px;color:var(--muted);line-height:1.55}.tabs{display:flex;gap:8px;flex-wrap:wrap}.tabs button.active{background:var(--accent);color:#091326}.tabs button{background:var(--panel2);color:var(--text);border:1px solid var(--line)}
+a{color:#9fc0ff;overflow-wrap:anywhere}.hidden{display:none!important}
+@media(max-width:620px){.grid{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}.company-head{flex-direction:column}.tag{align-self:flex-start}main{padding:17px 12px 40px}}
+</style>
+</head>
+<body><main>
+<header class="top"><div><div class="brand">Lead<span>Finder</span></div><div class="sub">Поиск потенциальных клиентов по открытым данным</div></div><div class="sub">Первая версия · бесплатно</div></header>
+<section class="panel">
+<h2>Найти организации</h2>
+<div class="grid">
+<div><label for="region">Регион или область (необязательно)</label><input id="region" placeholder="Например, Республика Татарстан"></div>
+<div><label for="city">Город или населённый пункт</label><input id="city" placeholder="Например, Казань" value=""></div>
+<div><label for="category">Категория бизнеса</label><select id="category"><option value="beauty">Салоны красоты</option><option value="auto">Автосервисы</option><option value="cafe">Кафе и рестораны</option><option value="dentist">Стоматологии</option><option value="shop">Магазины</option><option value="construction">Строительные компании</option></select></div>
+<div><label for="limit">Количество результатов</label><select id="limit"><option>20</option><option selected>40</option><option>60</option><option>80</option></select></div>
+</div>
+<div class="actions"><button id="searchBtn">Найти компании</button><button class="secondary" id="savedBtn">Избранное (<span id="savedCount">0</span>)</button><button class="secondary" id="exportBtn">Экспорт CSV</button></div>
+<div class="status" id="status">Укажи город и категорию. Поиск выполняется через OpenStreetMap; результаты зависят от полноты открытой карты.</div>
+</section>
+<section class="panel">
+<div class="stats"><div class="stat"><b id="total">0</b><span>Найдено</span></div><div class="stat"><b id="noSite">0</b><span>Сайт не указан в карте</span></div><div class="stat"><b id="savedTotal">0</b><span>Сохранено</span></div></div>
+</section>
+<section class="panel">
+<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:13px"><h2 id="resultsTitle" style="margin:0">Результаты поиска</h2><div class="tabs"><button class="active" id="allTab">Все</button><button id="nositeTab">Без сайта</button></div></div>
+<div class="list" id="results"><div class="empty">Здесь появятся найденные организации.</div></div>
+</section>
+<section class="panel">
+<h2>Как работает оценка</h2>
+<p class="note">Пока это предварительная сортировка, а не автоматическое заключение о качестве бизнеса. Если в карточке OpenStreetMap не указан сайт, это не доказывает, что у компании его нет. Проверяй организацию вручную перед обращением. На следующем этапе добавим безопасную проверку доступности сайта и более подробные критерии мобильной версии.</p>
+<p class="note">Данные карты предоставляются участниками OpenStreetMap. © OpenStreetMap contributors · <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">Условия и атрибуция</a>. Не отправляй массовые сообщения и соблюдай правила источников и требования к персональным данным.</p>
+</section>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const categories={
+ beauty:[['shop','beauty'],['beauty','beauty'],['craft','beauty']],
+ auto:[['shop','car_repair'],['shop','car'],['amenity','car_wash']],
+ cafe:[['amenity','cafe'],['amenity','restaurant'],['amenity','fast_food']],
+ dentist:[['amenity','dentist']],
+ shop:[['shop','*']],
+ construction:[['craft','*'],['office','construction']]
+};
+let found=[],saved=JSON.parse(localStorage.getItem('lf_saved')||'[]'),view='all';
+function updateStats(){ $('total').textContent=found.length;$('noSite').textContent=found.filter(x=>!x.website).length;$('savedTotal').textContent=saved.length;$('savedCount').textContent=saved.length; }
+function esc(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function render(){
+ const arr=view==='saved'?saved:found.filter(x=>view==='nosite'?!x.website:true);
+ $('resultsTitle').textContent=view==='saved'?'Сохранённые компании':view==='nosite'?'Компании без указанного сайта':'Результаты поиска';
+ if(!arr.length){$('results').innerHTML='<div class="empty">Пока нет записей. Выполни поиск или сохрани компанию.</div>';return;}
+ $('results').innerHTML=arr.map(x=>{
+ const isSaved=saved.some(s=>s.id===x.id);
+ const website=x.website?'<a href="'+esc(x.website)+'" target="_blank" rel="noopener">'+esc(x.website)+'</a>':'Не указан в карточке';
+ const reason=x.website?'Сайт указан — нужна ручная проверка удобства и содержания.':'Сайт не указан в OpenStreetMap — проверь, существует ли официальный сайт.';
+ return '<article class="company"><div class="company-head"><div><h3>'+esc(x.name)+'</h3><div class="meta">'+esc(x.address||'Адрес не указан')+'</div><div class="meta">Сайт: '+website+'</div></div><span class="tag">'+(x.website?'Сайт указан':'Сайт не указан')+'</span></div><div class="reason">'+reason+'</div><div class="company-actions"><button class="secondary" onclick="toggleSave(\''+esc(x.id)+'\')">'+(isSaved?'Убрать из избранного':'Сохранить')+'</button><button class="secondary" onclick="copyLead(\''+esc(x.id)+'\')">Скопировать данные</button><a class="btn" style="text-decoration:none;padding:8px 11px;font-size:12px" href="'+esc(x.mapUrl)+'" target="_blank" rel="noopener">Открыть на карте</a></div></article>';
+ }).join('');
+}
+function toggleSave(id){const item=found.find(x=>x.id===id)||saved.find(x=>x.id===id);if(!item)return;if(saved.some(x=>x.id===id))saved=saved.filter(x=>x.id!==id);else saved.push(item);localStorage.setItem('lf_saved',JSON.stringify(saved));updateStats();render();}
+function copyLead(id){const x=found.find(x=>x.id===id)||saved.find(x=>x.id===id);if(!x)return;const t=[x.name,x.address,'Сайт: '+(x.website||'не указан в карточке OSM'),x.mapUrl].join('\n');navigator.clipboard?.writeText(t).then(()=>alert('Данные скопированы')).catch(()=>alert(t));}
+function tagQuery([k,v]){return v==='*'?'["'+k+'"]':'["'+k+'"="'+v+'"]';}
+async function search(){
+ const city=$('city').value.trim(),region=$('region').value.trim();if(!city){$('status').textContent='Сначала укажи город.';return;}
+ const place=[city,region,'Россия'].filter(Boolean).join(', ');
+ $('searchBtn').disabled=true;$('status').textContent='Ищу населённый пункт и организации…';found=[];render();updateStats();
+ try{
+ const geo=await fetch('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q='+encodeURIComponent(place),{headers:{'Accept-Language':'ru'}});
+ if(!geo.ok)throw Error('Не удалось обратиться к геопоиску. Попробуй позже.');
+ const places=await geo.json();if(!places.length)throw Error('Населённый пункт не найден. Уточни название или регион.');
+ const p=places[0],bb=p.boundingbox.map(Number),south=bb[0],north=bb[1],west=bb[2],east=bb[3];
+ const selectors=categories[$('category').value].map(tagQuery).join('');
+ const query='[out:json][timeout:25];(node'+selectors+'('+south+','+west+','+north+','+east+');way'+selectors+'('+south+','+west+','+north+','+east+');relation'+selectors+'('+south+','+west+','+north+','+east+'););out center tags;';
+ $('status').textContent='Получаю организации из OpenStreetMap…';
+ const endpoints=['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter'];
+ let data=null,lastError=null;
+ for(const ep of endpoints){try{const r=await fetch(ep,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},body:'data='+encodeURIComponent(query)});if(!r.ok)throw Error('Сервер карты временно занят');data=await r.json();break;}catch(e){lastError=e;}}
+ if(!data)throw lastError||Error('Сервисы поиска временно недоступны.');
+ const max=Number($('limit').value);
+ found=data.elements.map(el=>{
+ const t=el.tags||{},c=el.center||{},lat=el.lat??c.lat,lon=el.lon??c.lon;
+ const name=t.name||t['name:ru']||t.brand||t.operator;
+ if(!name)return null;
+ const addr=[t['addr:city'],t['addr:street'],t['addr:housenumber']].filter(Boolean).join(', ')||place;
+ let website=t.website||t['contact:website']||'';
+ if(website&&!/^https?:\/\//i.test(website))website='https://'+website;
+ return {id:String(el.type)+'-'+el.id,name,address:addr,website,mapUrl:lat&&lon?'https://www.openstreetmap.org/?mlat='+lat+'&mlon='+lon+'#map=17/'+lat+'/'+lon:'https://www.openstreetmap.org/',source:'OpenStreetMap'};
+ }).filter(Boolean);
+ found=[...new Map(found.map(x=>[x.id,x])).values()].slice(0,max);
+ view='all';$('allTab').classList.add('active');$('nositeTab').classList.remove('active');
+ updateStats();render();$('status').textContent='Готово. Найдено записей: '+found.length+'. Место поиска: '+p.display_name+'. Это только организации, внесённые в OpenStreetMap.';
+ }catch(e){$('status').textContent='Ошибка: '+(e.message||'не удалось выполнить поиск')+'. Попробуй ещё раз позднее или измени город.';}
+ finally{$('searchBtn').disabled=false;}
+}
+$('searchBtn').addEventListener('click',search);
+$('savedBtn').addEventListener('click',()=>{view='saved';$('allTab').classList.remove('active');$('nositeTab').classList.remove('active');render();});
+$('allTab').addEventListener('click',()=>{view='all';$('allTab').classList.add('active');$('nositeTab').classList.remove('active');render();});
+$('nositeTab').addEventListener('click',()=>{view='nosite';$('nositeTab').classList.add('active');$('allTab').classList.remove('active');render();});
+$('exportBtn').addEventListener('click',()=>{const rows=[['Название','Адрес','Сайт','Карта','Источник'],...saved.map(x=>[x.name,x.address,x.website,x.mapUrl,x.source])];const csv='\ufeff'+rows.map(r=>r.map(v=>'"'+String(v||'').replace(/"/g,'""')+'"').join(';')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='leadfinder_saved.csv';a.click();URL.revokeObjectURL(a.href);});
+updateStats();
+</script></body></html>
