@@ -84,23 +84,30 @@ function render(){
 function toggleSave(id){const item=found.find(x=>x.id===id)||saved.find(x=>x.id===id);if(!item)return;if(saved.some(x=>x.id===id))saved=saved.filter(x=>x.id!==id);else saved.push(item);localStorage.setItem('lf_saved',JSON.stringify(saved));updateStats();render();}
 function copyLead(id){const x=found.find(x=>x.id===id)||saved.find(x=>x.id===id);if(!x)return;const t=[x.name,x.address,'Сайт: '+(x.website||'не указан в карточке OSM'),x.mapUrl].join('\\n');navigator.clipboard?.writeText(t).then(()=>alert('Данные скопированы')).catch(()=>alert(t));}
 function tagQuery([k,v]){return v==='*'?'["'+k+'"]':'["'+k+'"="'+v+'"]';}
+async function fetchTimed(url,options={},timeoutMs=15000){
+ const controller=new AbortController();
+ const timer=setTimeout(()=>controller.abort(),timeoutMs);
+ try{return await fetch(url,{...options,signal:controller.signal});}
+ catch(e){if(e.name==='AbortError')throw Error('Превышено время ожидания ответа сервера.');throw e;}
+ finally{clearTimeout(timer);}
+}
 async function search(){
  const city=$('city').value.trim(),region=$('region').value.trim();if(!city){$('status').textContent='Сначала укажи город.';return;}
  const place=[city,region,'Россия'].filter(Boolean).join(', ');
  $('searchBtn').disabled=true;$('status').textContent='Ищу населённый пункт и организации…';found=[];render();updateStats();
  try{
- const geo=await fetch('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q='+encodeURIComponent(place),{headers:{'Accept-Language':'ru'}});
+ const geo=await fetchTimed('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q='+encodeURIComponent(place),{headers:{'Accept-Language':'ru'}},12000);
  if(!geo.ok)throw Error('Не удалось обратиться к геопоиску. Попробуй позже.');
  const places=await geo.json();if(!places.length)throw Error('Населённый пункт не найден. Уточни название или регион.');
  const p=places[0],bb=p.boundingbox.map(Number),south=bb[0],north=bb[1],west=bb[2],east=bb[3];
  const selectors=categories[$('category').value];
  const blocks=selectors.flatMap(sel=>['node'+tagQuery(sel)+'('+south+','+west+','+north+','+east+')','way'+tagQuery(sel)+'('+south+','+west+','+north+','+east+')','relation'+tagQuery(sel)+'('+south+','+west+','+north+','+east+')']);
  const query='[out:json][timeout:25];('+blocks.join(';')+');out center tags;';
- $('status').textContent='Получаю организации из OpenStreetMap…';
+ $('status').textContent='Получаю организации из OpenStreetMap… (ожидание до 30 секунд)';
  const endpoints=['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter'];
  let data=null,lastError=null;
- for(const ep of endpoints){try{const r=await fetch(ep,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},body:'data='+encodeURIComponent(query)});if(!r.ok)throw Error('Сервер карты временно занят');data=await r.json();break;}catch(e){lastError=e;}}
- if(!data)throw lastError||Error('Сервисы поиска временно недоступны.');
+ for(const ep of endpoints){try{const r=await fetchTimed(ep,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},body:'data='+encodeURIComponent(query)},15000);if(!r.ok)throw Error('Сервер карты временно занят (HTTP '+r.status+').');data=await r.json();break;}catch(e){lastError=e;}}
+ if(!data)throw Error('Оба сервера OpenStreetMap не ответили. '+(lastError?.message||'Попробуй позже или выбери другой город/категорию.'));
  const max=Number($('limit').value);
  found=data.elements.map(el=>{
  const t=el.tags||{},c=el.center||{},lat=el.lat??c.lat,lon=el.lon??c.lon;
