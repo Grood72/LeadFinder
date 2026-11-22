@@ -93,8 +93,9 @@ async function search(){
  if(!geo.ok)throw Error('Не удалось обратиться к геопоиску. Попробуй позже.');
  const places=await geo.json();if(!places.length)throw Error('Населённый пункт не найден. Уточни название или регион.');
  const p=places[0],bb=p.boundingbox.map(Number),south=bb[0],north=bb[1],west=bb[2],east=bb[3];
- const selectors=categories[$('category').value].map(tagQuery).join('');
- const query='[out:json][timeout:25];(node'+selectors+'('+south+','+west+','+north+','+east+');way'+selectors+'('+south+','+west+','+north+','+east+');relation'+selectors+'('+south+','+west+','+north+','+east+'););out center tags;';
+ const selectors=categories[$('category').value];
+ const blocks=selectors.flatMap(sel=>['node'+tagQuery(sel)+'('+south+','+west+','+north+','+east+')','way'+tagQuery(sel)+'('+south+','+west+','+north+','+east+')','relation'+tagQuery(sel)+'('+south+','+west+','+north+','+east+')']);
+ const query='[out:json][timeout:25];('+blocks.join(';')+');out center tags;';
  $('status').textContent='Получаю организации из OpenStreetMap…';
  const endpoints=['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter'];
  let data=null,lastError=null;
