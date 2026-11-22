@@ -130,6 +130,6 @@ $('savedBtn').addEventListener('click',()=>{view='saved';$('allTab').classList.r
 $('allTab').addEventListener('click',()=>{view='all';$('allTab').classList.add('active');$('nositeTab').classList.remove('active');render();});
 $('nositeTab').addEventListener('click',()=>{view='nosite';$('nositeTab').classList.add('active');$('allTab').classList.remove('active');render();});
 $('sort').addEventListener('change',render);
-$('exportBtn').addEventListener('click',()=>{const rows=[['Название','Адрес','Сайт','Телефон','Рейтинг','Причины оценки','Карта','Источник'],...saved.map(x=>[x.name,x.address,x.website,x.phone,x.score,x.scoreReason,x.mapUrl,x.source])];const csv='\ufeff'+rows.map(r=>r.map(v=>'"'+String(v||'').replace(/"/g,'""')+'"').join(';')).join('\\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='leadfinder_saved.csv';a.click();URL.revokeObjectURL(a.href);});
+$('exportBtn').addEventListener('click',()=>{const rows=[['Название','Адрес','Сайт','Телефон','Рейтинг','Причины оценки','Карта','Источник'],...saved.map(x=>[x.name,x.address,x.website,x.phone,x.score,x.scoreReason,x.mapUrl,x.source])];const csv='\ufeff'+rows.map(r=>r.map(v=>'"'+String(v||'').replace(/"/g,'""')+'"').join(';')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='leadfinder_saved.csv';a.click();URL.revokeObjectURL(a.href);});
 updateStats();
 </script></body></html>
