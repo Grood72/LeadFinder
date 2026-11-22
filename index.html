@@ -101,15 +101,15 @@ async function search(){
  const places=await geo.json();if(!places.length)throw Error('Населённый пункт не найден. Уточни название или регион.');
  const p=places[0],bb=p.boundingbox.map(Number),south=bb[0],north=bb[1],west=bb[2],east=bb[3];
  const selectors=categories[$('category').value];
- // Ищем в радиусе 10 км от центра населённого пункта, а не по всей административной области:
- // это заметно уменьшает объём запроса для крупных городов и регионов.
- const query='[out:json][timeout:20];('+selectors.map(sel=>'nwr'+tagQuery(sel)+'(around:10000,'+p.lat+','+p.lon+');').join('')+');out center tags;';
- $('status').textContent='Получаю организации в радиусе 10 км от центра города…';
+ // Ограничиваем область радиусом 3 км: широкие запросы по целому городу
+ // часто перегружают публичные Overpass-серверы.
+ const query='[out:json][timeout:30];('+selectors.map(sel=>'nwr'+tagQuery(sel)+'(around:3000,'+p.lat+','+p.lon+');').join('')+');out center tags;';
+ $('status').textContent='Ищу организации в радиусе 3 км от центра города…';
  const endpoints=['https://maps.mail.ru/osm/tools/overpass/api/interpreter','https://overpass.private.coffee/api/interpreter','https://overpass-api.de/api/interpreter'];
  let data=null;const endpointErrors=[];
  for(const ep of endpoints){
   try{
-   const r=await fetchTimed(ep,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},body:'data='+encodeURIComponent(query)},12000);
+   const r=await fetchTimed(ep,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},body:'data='+encodeURIComponent(query)},25000);
    if(!r.ok)throw Error('HTTP '+r.status);
    const body=await r.text();
    try{data=JSON.parse(body);}catch(_){throw Error('Сервер вернул не JSON: '+body.slice(0,100));}
