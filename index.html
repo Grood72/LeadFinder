@@ -82,8 +82,7 @@ function render(){
  }).join('');
 }
 function toggleSave(id){const item=found.find(x=>x.id===id)||saved.find(x=>x.id===id);if(!item)return;if(saved.some(x=>x.id===id))saved=saved.filter(x=>x.id!==id);else saved.push(item);localStorage.setItem('lf_saved',JSON.stringify(saved));updateStats();render();}
-function copyLead(id){const x=found.find(x=>x.id===id)||saved.find(x=>x.id===id);if(!x)return;const t=[x.name,x.address,'Сайт: '+(x.website||'не указан в карточке OSM'),x.mapUrl].join('
-');navigator.clipboard?.writeText(t).then(()=>alert('Данные скопированы')).catch(()=>alert(t));}
+function copyLead(id){const x=found.find(x=>x.id===id)||saved.find(x=>x.id===id);if(!x)return;const t=[x.name,x.address,'Сайт: '+(x.website||'не указан в карточке OSM'),x.mapUrl].join('\\n');navigator.clipboard?.writeText(t).then(()=>alert('Данные скопированы')).catch(()=>alert(t));}
 function tagQuery([k,v]){return v==='*'?'["'+k+'"]':'["'+k+'"="'+v+'"]';}
 async function search(){
  const city=$('city').value.trim(),region=$('region').value.trim();if(!city){$('status').textContent='Сначала укажи город.';return;}
