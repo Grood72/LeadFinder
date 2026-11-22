@@ -82,7 +82,8 @@ function render(){
  }).join('');
 }
 function toggleSave(id){const item=found.find(x=>x.id===id)||saved.find(x=>x.id===id);if(!item)return;if(saved.some(x=>x.id===id))saved=saved.filter(x=>x.id!==id);else saved.push(item);localStorage.setItem('lf_saved',JSON.stringify(saved));updateStats();render();}
-function copyLead(id){const x=found.find(x=>x.id===id)||saved.find(x=>x.id===id);if(!x)return;const t=[x.name,x.address,'Сайт: '+(x.website||'не указан в карточке OSM'),x.mapUrl].join('\n');navigator.clipboard?.writeText(t).then(()=>alert('Данные скопированы')).catch(()=>alert(t));}
+function copyLead(id){const x=found.find(x=>x.id===id)||saved.find(x=>x.id===id);if(!x)return;const t=[x.name,x.address,'Сайт: '+(x.website||'не указан в карточке OSM'),x.mapUrl].join('
+');navigator.clipboard?.writeText(t).then(()=>alert('Данные скопированы')).catch(()=>alert(t));}
 function tagQuery([k,v]){return v==='*'?'["'+k+'"]':'["'+k+'"="'+v+'"]';}
 async function search(){
  const city=$('city').value.trim(),region=$('region').value.trim();if(!city){$('status').textContent='Сначала укажи город.';return;}
@@ -115,7 +116,10 @@ async function search(){
  const chainSignal=!!(t.brand||t.operator||t.branch||t['brand:wikidata']);
  return {id:String(el.type)+'-'+el.id,name,address:addr,website,phone,email,social,hasAddress,hours:!!t.opening_hours,chainSignal,mapUrl:lat&&lon?'https://www.openstreetmap.org/?mlat='+lat+'&mlon='+lon+'#map=17/'+lat+'/'+lon:'https://www.openstreetmap.org/',source:'OpenStreetMap'};
  }).filter(Boolean);
- found=[...new Map(found.map(x=>[x.id,x])).values()];\n found.forEach(scoreCompany);\n found.sort((a,b)=>b.score-a.score);\n found=found.slice(0,max);
+ found=[...new Map(found.map(x=>[x.id,x])).values()];
+ found.forEach(scoreCompany);
+ found.sort((a,b)=>b.score-a.score);
+ found=found.slice(0,max);
  view='all';$('allTab').classList.add('active');$('nositeTab').classList.remove('active');
  updateStats();render();$('status').textContent='Готово. Найдено записей: '+found.length+'. Место поиска: '+p.display_name+'. Это только организации, внесённые в OpenStreetMap.';
  }catch(e){$('status').textContent='Ошибка: '+(e.message||'не удалось выполнить поиск')+'. Попробуй ещё раз позднее или измени город.';}
@@ -125,6 +129,8 @@ $('searchBtn').addEventListener('click',search);
 $('savedBtn').addEventListener('click',()=>{view='saved';$('allTab').classList.remove('active');$('nositeTab').classList.remove('active');render();});
 $('allTab').addEventListener('click',()=>{view='all';$('allTab').classList.add('active');$('nositeTab').classList.remove('active');render();});
 $('nositeTab').addEventListener('click',()=>{view='nosite';$('nositeTab').classList.add('active');$('allTab').classList.remove('active');render();});
-$('sort').addEventListener('change',render);\n$('exportBtn').addEventListener('click',()=>{const rows=[['Название','Адрес','Сайт','Телефон','Рейтинг','Причины оценки','Карта','Источник'],...saved.map(x=>[x.name,x.address,x.website,x.phone,x.score,x.scoreReason,x.mapUrl,x.source])];const csv='\ufeff'+rows.map(r=>r.map(v=>'"'+String(v||'').replace(/"/g,'""')+'"').join(';')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='leadfinder_saved.csv';a.click();URL.revokeObjectURL(a.href);});
+$('sort').addEventListener('change',render);
+$('exportBtn').addEventListener('click',()=>{const rows=[['Название','Адрес','Сайт','Телефон','Рейтинг','Причины оценки','Карта','Источник'],...saved.map(x=>[x.name,x.address,x.website,x.phone,x.score,x.scoreReason,x.mapUrl,x.source])];const csv='\ufeff'+rows.map(r=>r.map(v=>'"'+String(v||'').replace(/"/g,'""')+'"').join(';')).join('
+');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='leadfinder_saved.csv';a.click();URL.revokeObjectURL(a.href);});
 updateStats();
 </script></body></html>
